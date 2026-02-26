@@ -15,13 +15,35 @@ EcoPulse AI is a production-grade smart-city intelligence system that monitors e
    pip install -r requirements.txt
    ```
 
-2. **Ensure Kafka is Running**:
-   The system expects a Kafka broker at `localhost:9092`.
+2. **Start Kafka (Local Setup)**:
+   Ensure you have Kafka installed and running. 
+   
+   **Windows (PowerShell):**
+   ```powershell
+   # Start Zookeeper
+   .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
+   
+   # Start Kafka Broker
+   .\bin\windows\kafka-server-start.bat .\config\server.properties
+   ```
+   
+   **Linux/macOS:**
+   ```bash
+   # Start Zookeeper
+   bin/zookeeper-server-start.sh config/zookeeper.properties
+   
+   # Start Kafka Broker
+   bin/kafka-server-start.sh config/server.properties
+   ```
 
 3. **Set OpenAI API Key**:
-   Create a `.env` file with `OPENAI_API_KEY=your_key`.
+   Create a `.env` file in the root directory:
+   ```env
+   OPENAI_API_KEY=sk-your-key-here
+   ```
 
-4. **Run the System**:
+4. **Run the Integrated System**:
+   The `main.py` script will automatically start the producer, streaming engine, and web interface.
    ```bash
    python main.py
    ```
