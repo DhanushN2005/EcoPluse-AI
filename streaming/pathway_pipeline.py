@@ -3,10 +3,19 @@ import os
 import sys
 import time
 import math
+import logging
 from datetime import datetime
-from flask import Flask, jsonify, request
+from typing import List, Dict, Optional, Any
+from flask import Flask, jsonify, request, Response
 import threading
 from confluent_kafka import Consumer, KafkaError
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("Pathway-Pipeline")
 
 # Ensure parent directory is in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,21 +24,37 @@ from config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, STREAM_HOST, STREAM_POR
 # PATHWAY SHIM FOR WINDOWS
 try:
     import pathway as pw
-    if not hasattr(pw, 'Schema'): raise ImportError()
+    if not hasattr(pw, 'Schema'):
+        raise ImportError()
     USE_PATHWAY = True
 except (ImportError, AttributeError):
     USE_PATHWAY = False
+    logger.warning("Pathway not found or incompatible. Falling back to Windows Shim.")
 
-def calculate_analytics(record, history=None, simulation_params=None):
-    """Core analytics logic combining OLD and NEW features."""
-    aqi = record['aqi']
-    co2 = record['co2']
-    pm25 = record['pm25']
-    traffic = record['traffic_density']
-    industrial = record['industrial_index']
-    wind = record['wind_speed']
-    temp = record['temperature']
-    humidity = record['humidity']
+def calculate_analytics(
+    record: Dict[str, Any], 
+    history: Optional[List[Dict[str, Any]]] = None, 
+    simulation_params: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Core analytics logic combining pollutant analysis, attribution, and simulation impact.
+    
+    Args:
+        record (Dict[str, Any]): The current sensor record.
+        history (Optional[List[Dict[str, Any]]]): Previous records for momentum tracking.
+        simulation_params (Optional[Dict[str, Any]]): Parameters for 'what-if' simulations.
+        
+    Returns:
+        Dict[str, Any]: The processed record with enriched analytics.
+    """
+    aqi = float(record['aqi'])
+    co2 = float(record['co2'])
+    pm25 = float(record['pm25'])
+    traffic = float(record['traffic_density'])
+    industrial = float(record['industrial_index'])
+    wind = float(record['wind_speed'])
+    temp = float(record['temperature'])
+    humidity = float(record['humidity'])
 
     # Apply simulation impact if provided (NEW)
     if simulation_params:
@@ -95,11 +120,15 @@ def calculate_analytics(record, history=None, simulation_params=None):
     
     return record
 
-def run_shim_pipeline():
+def run_shim_pipeline() -> None:
+    """
+    Initializes and starts the Flask-based Windows Shim for the Pathway engine.
+    """
     app = Flask("Pathway_Shim")
-    state = {"data": []}
+    state: Dict[str, List[Dict[str, Any]]] = {"data": []}
 
-    def kafka_loop():
+    def kafka_loop() -> None:
+        """Background thread for consuming Kafka messages and updating state."""
         conf = {
             'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
             'group.id': 'pathway-shim-group',
@@ -108,13 +137,17 @@ def run_shim_pipeline():
         consumer = Consumer(conf)
         consumer.subscribe([KAFKA_TOPIC])
 
-        print(f"[SHIM] Consuming from Kafka: {KAFKA_TOPIC}")
+        logger.info(f"Consuming from Kafka topic: {KAFKA_TOPIC}")
         while True:
             msg = consumer.poll(1.0)
-            if msg is None: continue
+            if msg is None:
+                continue
             if msg.error():
-                if msg.error().code() == KafkaError._PARTITION_EOF: continue
-                else: print(msg.error()); break
+                if msg.error().code() == KafkaError._PARTITION_EOF:
+                    continue
+                else:
+                    logger.error(f"Kafka error: {msg.error()}")
+                    break
 
             try:
                 record = json.loads(msg.value().decode('utf-8'))
@@ -122,16 +155,19 @@ def run_shim_pipeline():
                 record = calculate_analytics(record, history=state["data"])
                 
                 state["data"].append(record)
-                if len(state["data"]) > 100: state["data"].pop(0)
+                if len(state["data"]) > 100:
+                    state["data"].pop(0)
             except Exception as e:
-                print(f"[SHIM ERROR] {e}")
+                logger.error(f"Error processing record: {e}")
 
     @app.route("/")
-    def shim_index():
+    def shim_index() -> str:
+        """Root endpoint for status verification."""
         return "EcoPulse AI Pathway Shim is Active. Metrics at /environmental_metrics"
 
     @app.route("/environmental_metrics")
-    def get_metrics():
+    def get_metrics() -> Response:
+        """Fetches the latest environmental metrics, supports simulation parameters."""
         sim_traffic = request.args.get('traffic_reduction')
         if sim_traffic and state["data"]:
             sim_params = request.args
@@ -142,11 +178,12 @@ def run_shim_pipeline():
         return jsonify(state["data"])
 
     @app.route("/district_comparison")
-    def get_district_comparison():
-        if not state["data"]: return jsonify({})
+    def get_district_comparison() -> Response:
+        """Generates a simulated comparison across city districts."""
+        if not state["data"]:
+            return jsonify({})
         latest = state["data"][-1]
         
-        # Simulate 4 major districts with variations
         districts = [
             {"name": "Central Business District", "aqi": latest['aqi'], "vulnerability": "High", "risk": "Traffic", "trend": "Rising"},
             {"name": "Industrial North", "aqi": round(latest['aqi'] * 1.3, 2), "vulnerability": "Critical", "risk": "Industrial", "trend": "Stable"},
@@ -156,8 +193,10 @@ def run_shim_pipeline():
         return jsonify(districts)
 
     @app.route("/national_metrics")
-    def get_national_metrics():
-        if not state["data"]: return jsonify([])
+    def get_national_metrics() -> Response:
+        """Generates simulated national environmental metrics."""
+        if not state["data"]:
+            return jsonify([])
         latest_aqi = state["data"][-1]['aqi']
         
         states = [
@@ -175,7 +214,7 @@ def run_shim_pipeline():
         return jsonify(states)
 
     threading.Thread(target=kafka_loop, daemon=True).start()
-    print(f"[SHIM] Serving Metrics at http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
+    logger.info(f"Serving Metrics at http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
     app.run(host=STREAM_HOST, port=STREAM_PORT, debug=False, use_reloader=False)
 
 if __name__ == "__main__":

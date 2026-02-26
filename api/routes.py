@@ -1,27 +1,40 @@
-from flask import Blueprint, render_template, jsonify, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required, current_user
-import requests
 import os
 import sys
+import logging
+import requests
+from datetime import datetime
+from typing import Dict, List, Any, Optional, Union
+
+from flask import (
+    Blueprint, 
+    render_template, 
+    jsonify, 
+    request, 
+    redirect, 
+    url_for, 
+    flash, 
+    send_file,
+    Response
+)
+from flask_login import login_user, logout_user, login_required, current_user
 
 # Ensure parent directory is in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ecopulse_ai.config import STREAM_HOST, STREAM_PORT
+from ecopulse_ai.config import STREAM_HOST, STREAM_PORT, REPORT_DIR
 from ecopulse_ai.analytics.alerts import get_alert_status
 from ecopulse_ai.analytics.prediction import get_aqi_forecast
 from ecopulse_ai.rag.copilot import ask_copilot
-
-# Helper for User
 from .models import User
-from flask import send_file
-from datetime import datetime
-from ecopulse_ai.config import REPORT_DIR
+
+# Configure logging
+logger = logging.getLogger("Web-Routes")
 
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/login', methods=['GET', 'POST'])
-def login():
+def login() -> Union[Response, str]:
+    """Handles user authentication and session management."""
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -29,67 +42,75 @@ def login():
         user = User.find_by_email(email)
         if user and user.verify_password(password):
             login_user(user)
+            logger.info(f"User {email} logged in successfully.")
             return redirect(url_for('main.dashboard'))
         else:
+            logger.warning(f"Failed login attempt for email: {email}")
             flash('Invalid email or password.')
     
     return render_template('login.html')
 
 @main_bp.route('/logout')
 @login_required
-def logout():
+def logout() -> Response:
+    """Terminates user session."""
+    logger.info(f"User {current_user.email} logged out.")
     logout_user()
     return redirect(url_for('main.login'))
 
 @main_bp.route('/')
 @login_required
-def dashboard():
+def dashboard() -> str:
+    """Serves the main environmental dashboard."""
     return render_template('dashboard.html')
 
 @main_bp.route('/analytics')
 @login_required
-def analytics():
+def analytics() -> str:
+    """Serves the complex analytics view."""
     return render_template('analytics.html')
 
 @main_bp.route('/copilot')
 @login_required
-def copilot():
+def copilot() -> str:
+    """Serves the AI Copilot chat interface."""
     return render_template('copilot.html')
 
 @main_bp.route('/governance')
 @login_required
-def governance():
+def governance() -> str:
+    """Serves the environmental governance and strategy view."""
     return render_template('governance.html')
 
 @main_bp.route('/national')
 @login_required
-def national():
+def national() -> str:
+    """Serves the national-level heatmap view."""
     return render_template('national.html')
 
 @main_bp.route('/archives')
 @login_required
-def archives():
+def archives() -> str:
+    """Serves archived environmental incident records."""
     return render_template('archives.html')
 
 @main_bp.route('/reports')
 @login_required
-def reports():
+def reports() -> str:
+    """Serves the report generation and export dashboard."""
     return render_template('reports.html')
 
 @main_bp.route('/action-plan')
 @login_required
-def action_plan():
+def action_plan() -> Union[Response, str]:
+    """Generates an AI-driven action plan based on current health status."""
     try:
-        # Fetch data for the plan
-        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
+        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", timeout=5)
         data = response.json()
         latest = data[-1] if data else {}
         
-        # Get forecast
         history = [d['aqi'] for d in data[-20:]] if len(data) >= 5 else [0]*5
         forecast = get_aqi_forecast(history)
-        
-        # Get active alerts
         alerts = get_alert_status(latest)
         
         from ecopulse_ai.analytics.planner import generate_action_plan
@@ -97,34 +118,40 @@ def action_plan():
         
         return render_template('action_plan.html', plan=plan)
     except Exception as e:
-        print(f"Error generating action plan: {e}")
+        logger.error(f"Error generating action plan: {e}")
         return redirect(url_for('main.dashboard'))
 
 @main_bp.route('/api/national')
 @login_required
-def get_national():
+def get_national() -> Response:
+    """Proxies national metrics from the streaming engine."""
     try:
-        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/national_metrics")
+        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/national_metrics", timeout=5)
         return jsonify(response.json())
-    except:
+    except Exception as e:
+        logger.error(f"Failed to fetch national metrics: {e}")
         return jsonify([])
 
 @main_bp.route('/api/districts')
 @login_required
-def get_districts():
+def get_districts() -> Response:
+    """Proxies district-level comparison data from the analytics engine."""
     try:
-        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/district_comparison")
+        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/district_comparison", timeout=5)
         return jsonify(response.json())
-    except:
+    except Exception as e:
+        logger.error(f"Failed to fetch district metrics: {e}")
         return jsonify([])
 
 @main_bp.route('/reports/mayor-brief')
 @login_required
-def export_mayor_brief():
+def export_mayor_brief() -> Response:
+    """Generates and serves a 'Mayor-Level' PDF briefing report."""
     try:
-        resp = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
+        resp = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", timeout=5)
         data = resp.json()
-    except:
+    except Exception as e:
+        logger.error(f"Data fetch failed for mayor brief: {e}")
         data = []
         
     filename = f"mayor_briefing_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
@@ -137,18 +164,16 @@ def export_mayor_brief():
 
 @main_bp.route('/api/metrics')
 @login_required
-def get_metrics():
-    """Proxies metrics from Pathway."""
+def get_metrics() -> Response:
+    """API endpoint for fetching real-time environmental metrics and forecasts."""
     try:
-        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", params=request.args)
+        response = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", params=request.args, timeout=5)
         data = response.json()
         if not data:
             return jsonify({"error": "No data from Pathway"}), 404
         
         latest = data[-1]
         alerts = get_alert_status(latest)
-        
-        # Prediction
         history = [d['aqi'] for d in data[-20:]]
         forecast = get_aqi_forecast(history)
         
@@ -159,31 +184,36 @@ def get_metrics():
             "history": data[-50:]
         })
     except Exception as e:
+        logger.error(f"Metrics Proxy Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @main_bp.route('/api/chat', methods=['POST'])
 @login_required
-def chat():
+def chat() -> Response:
+    """Integrates the LLM-powered Climate Copilot with real-time analytics."""
     body = request.json
     query = body.get('query')
     
     try:
-        r = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
+        r = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", timeout=5)
         latest = r.json()[-1] if r.json() else {}
         alerts = get_alert_status(latest)
         
-        response = ask_copilot(query, latest, alerts)
-        return jsonify({"response": response})
+        response_text = ask_copilot(query, latest, alerts)
+        return jsonify({"response": response_text})
     except Exception as e:
+        logger.error(f"Copilot logic error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @main_bp.route('/reports/export')
 @login_required
-def export_report():
+def export_report() -> Response:
+    """Generates and serves a full professional environmental health report."""
     try:
-        resp = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics")
+        resp = requests.get(f"http://{STREAM_HOST}:{STREAM_PORT}/environmental_metrics", timeout=5)
         data = resp.json()
-    except:
+    except Exception as e:
+        logger.error(f"Data fetch failed for full report: {e}")
         data = []
         
     filename = f"ecopulse_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"

@@ -1,24 +1,45 @@
 import json
 import time
 import random
-from datetime import datetime
-from confluent_kafka import Producer
-import sys
+import logging
 import os
+import sys
+from datetime import datetime
+from typing import Dict, Any, Generator, Optional, Callable
+from confluent_kafka import Producer, Message
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("Kafka-Producer")
 
 # Ensure parent directory is in path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, SIMULATOR_INTERVAL
 
-def delivery_report(err, msg):
+def delivery_report(err: Optional[Exception], msg: Message) -> None:
+    """
+    Reports the success or failure of a message delivery.
+    
+    Args:
+        err (Optional[Exception]): The error if delivery failed.
+        msg (Message): The Kafka message object.
+    """
     if err is not None:
-        print(f'[ERROR] Message delivery failed: {err}')
+        logger.error(f'Message delivery failed: {err}')
     else:
-        pass # Successful delivery
+        logger.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
 
-def generate_sensor_data():
-    """Generates realistic environmental sensor data."""
-    # Base values
+def generate_sensor_data() -> Generator[Dict[str, Any], None, None]:
+    """
+    Generates a continuous stream of realistic environmental sensor data using a random walk.
+    
+    Yields:
+        Dict[str, Any]: A dictionary containing telemetry data.
+    """
+    # Initialize base values
     aqi = random.uniform(40, 60)
     pm25 = random.uniform(10, 25)
     co2 = random.uniform(380, 450)
@@ -28,20 +49,22 @@ def generate_sensor_data():
     traffic = random.uniform(20, 40)
     industrial = random.uniform(10, 30)
 
+    logger.info("Starting sensor data generation loop...")
+    
     while True:
-        # Add random walk
+        # Apply random walk to simulate natural variance
         aqi += random.uniform(-2, 2)
         pm25 += random.uniform(-1, 1)
         co2 += random.uniform(-5, 5)
         temp += random.uniform(-0.1, 0.1)
         
-        # Occasional spikes
+        # Occasional spikes to simulate environmental incidents
         if random.random() < 0.05:
             aqi += random.uniform(30, 70)
             pm25 += random.uniform(20, 50)
-            print("[SPIKE] Pollution spike detected!")
+            logger.warning("Simulated pollution spike detected in sensor stream.")
 
-        # Keep within bounds
+        # Bound values to realistic extremes
         aqi = max(10, min(500, aqi))
         pm25 = max(1, min(300, pm25))
         co2 = max(300, min(2000, co2))
@@ -60,19 +83,21 @@ def generate_sensor_data():
         yield data
         time.sleep(SIMULATOR_INTERVAL)
 
-def run_producer():
-    print(f"[KAFKA] Starting producer for topic: {KAFKA_TOPIC}")
+def run_producer() -> None:
+    """
+    Connects to the Kafka broker and publishes simulated telemetry data.
+    """
+    logger.info(f"Initializing Kafka producer for topic: {KAFKA_TOPIC}")
     conf = {'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS}
     
     try:
         producer = Producer(conf)
     except Exception as e:
-        print(f"[ERROR] Failed to connect to Kafka: {e}")
-        print("[INFO] Make sure Kafka is running at localhost:9092")
+        logger.critical(f"Failed to connect to Kafka at {KAFKA_BOOTSTRAP_SERVERS}: {e}")
         return
 
-    for data in generate_sensor_data():
-        try:
+    try:
+        for data in generate_sensor_data():
             producer.produce(
                 KAFKA_TOPIC, 
                 key=str(time.time()), 
@@ -80,10 +105,14 @@ def run_producer():
                 callback=delivery_report
             )
             producer.poll(0)
-            print(f"[SENT] AQI: {data['aqi']} | CO2: {data['co2']}")
-        except Exception as e:
-            print(f"[ERROR] Production failed: {e}")
-            break
+            logger.info(f"Sent Telemetry -> AQI: {data['aqi']} | CO2: {data['co2']}")
+    except KeyboardInterrupt:
+        logger.info("Producer shutting down by user request.")
+    except Exception as e:
+        logger.error(f"Production loop failed: {e}")
+    finally:
+        logger.info("Flushing Kafka producer...")
+        producer.flush()
 
 if __name__ == "__main__":
     run_producer()
