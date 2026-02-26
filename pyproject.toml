@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecopulse-ai"
+version = "1.0.0"
+authors = [
+  { name="Dhanush N", email="dhanush@example.com" },
+]
+description = "Real-Time Environmental Intelligence System"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "flask",
+    "flask-login",
+    "pathway",
+    "openai",
+    "pandas",
+    "numpy",
+    "fpdf2",
+    "python-dotenv",
+    "scikit-learn",
+    "requests",
+    "confluent-kafka",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/DhanushN2005/EcoPluse-AI"
+"Bug Tracker" = "https://github.com/DhanushN2005/EcoPluse-AI/issues"
