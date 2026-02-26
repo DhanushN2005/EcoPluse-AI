@@ -58,5 +58,5 @@ EcoPulse AI is a production-grade smart-city intelligence system that monitors e
 - **Streaming**: Pathway
 - **Broker**: Kafka
 - **Backend**: Flask
-- **Frontend**: HTML5, TailwindCSS, Chart.js
+- **Frontend**: HTML5, Vanilla CSS (Glassmorphism), Chart.js
 - **Intelligence**: OpenAI GPT-4o
