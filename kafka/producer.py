@@ -1,23 +1,27 @@
+"""
+EcoPulse AI Sensor Stream Simulator (Kafka Producer).
+Simulates a multi-sensor environmental telemetry mesh and publishes high-fidelity
+JSON data to the Apache Kafka broker.
+"""
+
 import json
-import time
-import random
 import logging
 import os
-import sys
+import random
+import time
 from datetime import datetime
-from typing import Dict, Any, Generator, Optional, Callable
-from confluent_kafka import Producer, Message
+from typing import Any, Callable, Dict, Generator, Optional
 
-# Configure logging
+from confluent_kafka import Message, Producer
+
+from ecopulse_ai.config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, SIMULATOR_INTERVAL
+
+# Configure module-level logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("Kafka-Producer")
-
-# Ensure parent directory is in path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, SIMULATOR_INTERVAL
 
 def delivery_report(err: Optional[Exception], msg: Message) -> None:
     """
