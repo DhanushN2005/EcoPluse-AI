@@ -1,3 +1,9 @@
+"""
+EcoPulse AI Unified Orchestrator.
+This is the main entry point to launch the integrated smart-city environmental intelligence system. 
+It starts and monitors the Kafka simulators, Pathway streaming analytics, and the Flask presentation layer.
+"""
+
 import subprocess
 import time
 import sys
@@ -6,7 +12,7 @@ import webbrowser
 import logging
 from typing import List, Dict
 
-# Configure professional logging
+# Configure professional logging for the orchestrator
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -15,81 +21,90 @@ logger = logging.getLogger("EcoPulse-Orchestrator")
 
 def get_env() -> Dict[str, str]:
     """
-    Environment with correct PYTHONPATH to treat 'ecopulse_ai' as a package.
+    Constructs an environment configuration with the correct PYTHONPATH.
+    This ensures 'ecopulse_ai' is treatable as a package for absolute imports.
     
     Returns:
-        Dict[str, str]: A copy of the system environment with updated PYTHONPATH.
+        Dict[str, str]: Optimized system environment variables.
     """
     env = os.environ.copy()
     root_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(root_dir)
+    # Inject current project location into system path
     env["PYTHONPATH"] = parent_dir + os.pathsep + env.get("PYTHONPATH", "")
     return env
 
 def start() -> None:
     """
-    Starts the EcoPulse AI system components in orchestrated sequence.
+    Sequences the startup and monitoring of all EcoPulse AI system components.
+    Processes: Sensor Simulator -> Streaming Analytics -> Web Interface.
     """
-    logger.info("Initializing EC-PULSE AI System Components...")
+    logger.info("Initializing EcoPulse AI (v1.0.0) System Stack...")
     
     env = get_env()
     processes: List[subprocess.Popen] = []
     
     try:
         # 1. Start Kafka Producer (Simulator)
-        logger.info("Starting Sensor Stream Simulator (Kafka Producer)...")
+        # Responsible for generating the RAW environmental telemetry stream
+        logger.info("Stage 1: Starting Sensor Stream Simulator (Kafka-Producer)...")
         p_prod = subprocess.Popen([sys.executable, "-m", "ecopulse_ai.kafka.producer"], env=env)
         processes.append(p_prod)
         
         time.sleep(3)
         
-        # 2. Start Pathway Pipeline (Handles real OR shim automatically)
-        logger.info("Starting Streaming Analytics Engine (Pathway/Shim)...")
+        # 2. Start Pathway Pipeline (The Analytics Backbone)
+        # Handles complex event processing and health indexing
+        logger.info("Stage 2: Initializing Streaming Analytics Engine (Pathway-Core)...")
         p_pipe = subprocess.Popen([sys.executable, "-m", "ecopulse_ai.streaming.pathway_pipeline"], env=env)
         processes.append(p_pipe)
         
-        time.sleep(8) # Allow time for Shim/Pathway to bind port 8080
+        time.sleep(8) # Critical: Allow engine to bind HTTP metrics port (8080)
         
-        # 3. Start Flask API
-        logger.info("Starting Presentation Layer (Flask API on Port 5000)...")
+        # 3. Start Flask Presentation Layer
+        # The primary user interface for city administrators
+        logger.info("Stage 3: Deploying Presentation Layer (Web Interface/API)...")
         p_api = subprocess.Popen([sys.executable, "-m", "ecopulse_ai.api.app"], env=env)
         processes.append(p_api)
 
-        # 4. Wait for API to warm up
-        logger.info("System warm-up phase in progress...")
+        # 4. Final Warm-up and Verification
+        logger.info("Performing final system health checks...")
         time.sleep(8)
         
-        logger.info("EcoPulse AI is now operational.")
-        logger.info(">> Administrative Dashboard: http://127.0.0.1:5000")
+        logger.info("✨ EcoPulse AI Fully Operational.")
+        logger.info("Access Dashboard via: http://127.0.0.1:5000")
         
-        # Open browser automatically for better user experience
-        webbrowser.open("http://127.0.0.1:5000")
+        # Automatically launch browser for frictionless startup
+        # (Disabled in headless environments/CI)
+        if os.getenv("GITHUB_ACTIONS") != "true":
+            webbrowser.open("http://127.0.0.1:5000")
         
-        # Monitor processes for health
+        # Continuous Process Monitoring
         while True:
-            time.sleep(1)
+            time.sleep(2)
             if p_api.poll() is not None:
-                logger.error("Presentation Layer (Web Interface) terminated unexpectedly.")
+                logger.error("Presentation Layer (API) component has failed.")
                 break
             if p_pipe.poll() is not None:
-                logger.error("Analytics Engine terminated unexpectedly.")
+                logger.error("Analytics Engine (Pathway) component has failed.")
+                break
+            if p_prod.poll() is not None:
+                logger.warning("Simulation Stream (Kafka) component has stopped.")
                 break
                 
     except KeyboardInterrupt:
-        logger.info("Shutdown signal received. Terminating system components...")
+        logger.info("System shutdown initiated by user.")
     except Exception as e:
-        logger.critical(f"System-level failure detected: {e}", exc_info=True)
+        logger.critical(f"Panic: System-level orchestrator failure: {e}", exc_info=True)
     finally:
+        logger.info("Terminating all sub-processes safely...")
         for p in processes:
             try:
                 p.terminate()
-                logger.debug(f"Process {p.pid} terminated.")
+                logger.info(f"Closed component PID: {p.pid}")
             except Exception as cleanup_error:
-                logger.warning(f"Error while terminating process: {cleanup_error}")
+                logger.warning(f"Error during component termination: {cleanup_error}")
         sys.exit(0)
-
-if __name__ == "__main__":
-    start()
 
 if __name__ == "__main__":
     start()

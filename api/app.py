@@ -1,16 +1,28 @@
-from flask import Flask
+"""
+EcoPulse AI Presentation Layer Factory.
+Responsible for initializing the Flask application, configuring authentication, 
+and registering tactical routing blueprints.
+"""
+
 import os
-import sys
-
-# Ensure parent directory is in path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from flask_login import LoginManager, UserMixin
-
+import logging
+from typing import Optional
+from flask import Flask
+from flask_login import LoginManager
 from .models import User
 
-def create_app():
-    # Use absolute paths based on the package root
+# Configure module-level logging
+logger = logging.getLogger("API-Application")
+
+def create_app() -> Flask:
+    """
+    Application factory for constructing the Flask instance.
+    Handles static/template path resolution, security keys, and user authentication.
+    
+    Returns:
+        Flask: The configured Flask application instance.
+    """
+    # Automated path resolution for deployment flexibility
     package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     template_dir = os.path.join(package_root, 'templates')
     static_dir = os.path.join(package_root, 'static')
@@ -19,29 +31,31 @@ def create_app():
                 template_folder=template_dir, 
                 static_folder=static_dir)
     
+    # Secure random key generation for session management
     app.secret_key = os.urandom(24)
     
+    # --- Authentication Configuration ---
     login_manager = LoginManager()
     login_manager.login_view = 'main.login'
     login_manager.init_app(app)
 
     @login_manager.user_loader
-    def load_user(user_id):
+    def load_user(user_id: str) -> Optional[User]:
+        """User loader callback for Flask-Login."""
         return User.get(user_id)
 
-    print(f"[DEBUG] Template folder: {os.path.abspath(app.template_folder)}")
-    print(f"[DEBUG] Static folder: {os.path.abspath(app.static_folder)}")
+    logger.info(f"Templates initialized at: {os.path.abspath(app.template_folder)}")
+    logger.info(f"Static assets initialized at: {os.path.abspath(app.static_folder)}")
 
+    # --- Blueprint Registration ---
     from .routes import main_bp
     app.register_blueprint(main_bp)
     
-    # Print registered routes for debugging
-    print("[DEBUG] Registered Routes:")
-    for rule in app.url_map.iter_rules():
-        print(f"  {rule}")
-
+    logger.debug("Successfully registered application blueprints and routes.")
     return app
 
 if __name__ == '__main__':
+    # Standalone execution for development debugging
     app = create_app()
-    app.run(host='0.0.0.0', port=5000)
+    logger.warning("Running standalone Flask server (Development Mode).")
+    app.run(host='0.0.0.0', port=5000, debug=True)
