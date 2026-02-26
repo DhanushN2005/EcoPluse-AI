@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | EcoPulse AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0F4C5C;
+            --secondary: #2ECC71;
+            --accent: #4FD1C5;
+        }
+
+        body {
+            background-color: #F8F9FA;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+
+<body class="font-['Inter'] min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full">
+        <!-- Logo -->
+        <div class="flex flex-col items-center mb-10">
+            <div class="w-16 h-16 rounded-2xl bg-[#0F4C5C] flex items-center justify-center shadow-xl mb-4">
+                <span class="text-3xl text-white">🌱</span>
+            </div>
+            <h1 class="text-3xl font-bold text-[#0F4C5C]">EcoPulse AI</h1>
+            <p class="text-slate-500 text-xs uppercase tracking-[0.3em] font-bold mt-2 text-center">Smart City
+                Intelligence</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 border border-slate-100">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-[#2C3E50]">Welcome back</h2>
+                <p class="text-slate-400 text-sm mt-1">Please enter your credentials to continue.</p>
+            </div>
+
+            <form action="/login" method="POST" class="space-y-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Email
+                            Address</label>
+                        <input type="email" name="email" required
+                            class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/10 focus:border-[#0F4C5C] transition-all"
+                            placeholder="admin@ecopulse.ai">
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                        <input type="password" name="password" required
+                            class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/10 focus:border-[#0F4C5C] transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between px-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox"
+                            class="w-4 h-4 rounded border-slate-200 text-[#0F4C5C] focus:ring-[#0F4C5C]">
+                        <span class="text-xs text-slate-500 font-medium">Remember me</span>
+                    </label>
+                    <a href="#" class="text-xs font-bold text-[#0F4C5C] hover:text-[#083a46]">Forgot?</a>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-[#0F4C5C] text-white py-5 rounded-2xl font-bold text-sm shadow-xl shadow-[#0F4C5C]/10 hover:shadow-[#0F4C5C]/20 hover:scale-[1.01] active:scale-[0.99] transition-all">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-10 pt-8 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-400 font-medium">
+                    Don't have an account?
+                    <a href="#" class="text-[#2ECC71] font-bold ml-1 hover:underline">Request access</a>
+                </p>
+            </div>
+        </div>
+
+        <p class="mt-8 text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+            Powered by Pathway Real-Time Engine
+        </p>
+    </div>
+</body>
+
+</html>

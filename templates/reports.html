@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block page_title %}Incident Reports{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 p-10">
+    <div class="flex justify-between items-center mb-10">
+        <div>
+            <h3 class="text-xl font-bold">Historical Log</h3>
+            <p class="text-sm text-slate-400">Archived environmental anomalies and responses.</p>
+        </div>
+        <a href="/reports/export"
+            class="bg-[#0F4C5C] text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center gap-2 hover:bg-[#0a3a46] transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Export Full Log
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="border-b border-slate-100">
+                    <th class="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Timestamp</th>
+                    <th class="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Incident Type</th>
+                    <th class="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Severity</th>
+                    <th class="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Metrics</th>
+                    <th class="py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                </tr>
+            </thead>
+            <tbody id="report-table" class="text-sm">
+                <!-- Data will be populated here -->
+                <tr class="border-b border-slate-50">
+                    <td class="py-6 text-slate-500">2026-02-25 14:20:01</td>
+                    <td class="py-6 font-bold">AQI Spike</td>
+                    <td class="py-6"><span
+                            class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-[10px] font-bold uppercase">Critical</span>
+                    </td>
+                    <td class="py-6 text-slate-500">AQI: 242 | PM2.5: 88</td>
+                    <td class="py-6 text-emerald-500 font-bold">Resolved</td>
+                </tr>
+                <tr class="border-b border-slate-50">
+                    <td class="py-6 text-slate-500">2026-02-25 13:45:12</td>
+                    <td class="py-6 font-bold">CO2 Accumulation</td>
+                    <td class="py-6"><span
+                            class="px-3 py-1 bg-amber-100 text-amber-600 rounded-full text-[10px] font-bold uppercase">Warning</span>
+                    </td>
+                    <td class="py-6 text-slate-500">CO2: 1240 ppm</td>
+                    <td class="py-6 text-emerald-500 font-bold">Resolved</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateUI(data) {
+        // Here we could dynamically add rows to the report table if alerts occur
+        const table = document.getElementById('report-table');
+        if (data.alerts && data.alerts.length > 0) {
+            data.alerts.forEach(alert => {
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-50 bg-red-50/30 animate-pulse";
+                row.innerHTML = `
+                    <td class="py-6 text-slate-600 font-medium">${new Date().toLocaleTimeString()}</td>
+                    <td class="py-6 font-bold">${alert.type} Incident</td>
+                    <td class="py-6"><span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-[10px] font-bold uppercase">${alert.level}</span></td>
+                    <td class="py-6 text-slate-500">Value: ${alert.value}</td>
+                    <td class="py-6 text-red-500 font-bold">Active</td>
+                `;
+                table.prepend(row);
+            });
+        }
+    }
+
+    window.addEventListener('load', () => {
+        startLiveUpdates(updateUI);
+    });
+</script>
+{% endblock %}

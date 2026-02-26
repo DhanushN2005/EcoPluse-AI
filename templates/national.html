@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block page_title %}National Air Quality Intelligence{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-end mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-[#0F4C5C]">India National Intelligence</h1>
+            <p class="text-slate-500 mt-1">Cross-state environmental infographic and risk monitoring.</p>
+        </div>
+        <div class="px-6 py-3 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">National Grid Online</span>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Interactive India Map Card -->
+        <div
+            class="lg:col-span-2 bg-white rounded-[3rem] shadow-xl border border-slate-50 p-10 relative overflow-hidden h-[700px]">
+            <div class="absolute top-10 left-10 z-10">
+                <h3 class="text-xl font-bold text-slate-800">Geospatial AQI Infographic</h3>
+                <p class="text-xs text-slate-400 font-medium">Interactive state-level air quality variance.</p>
+            </div>
+
+            <!-- Interactive Map Container -->
+            <div id="indiaMapContainer" class="w-full h-full flex items-center justify-center pt-10">
+                <div id="nationalMap"
+                    class="w-full h-full rounded-3xl bg-slate-50 z-0 border border-slate-100 shadow-inner"></div>
+            </div>
+
+            <!-- Legend Overlay -->
+            <div
+                class="absolute bottom-10 left-10 bg-white/90 backdrop-blur-xl p-6 rounded-3xl border border-slate-100 flex gap-6 z-[1000] shadow-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#10B981] shadow-sm"></div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Optimal</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#F59E0B] shadow-sm"></div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Moderate</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#EF4444] shadow-sm animate-pulse"></div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Critical</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Meta Info -->
+        <div class="space-y-6">
+            <!-- National Risk Leaderboard -->
+            <div class="bg-white rounded-[3rem] shadow-xl border border-slate-50 p-8">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">State-Wise Variance</h3>
+                <div id="stateList" class="space-y-4">
+                    <!-- State rows injected here -->
+                </div>
+            </div>
+
+            <!-- National Health Advisory -->
+            <div class="bg-[#0F4C5C] rounded-[3rem] shadow-2xl p-8 text-white">
+                <h3 class="text-xs font-black text-teal-200 uppercase tracking-widest mb-4">Aero-Meteorological Advisory
+                </h3>
+                <p id="nationalAdvisory" class="text-sm text-teal-50 leading-relaxed font-bold">
+                    System analyzing cross-border atmospheric drift between Delhi NCR and Uttar Pradesh.
+                </p>
+                <div class="mt-6 pt-6 border-t border-white/10 flex items-center justify-between">
+                    <span class="text-[9px] font-bold text-teal-300 uppercase tracking-widest">Decision Support
+                        System</span>
+                    <i class="fas fa-microchip text-teal-400"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const stateGeo = {
+        "Maharashtra": [19.7515, 75.7139],
+        "Delhi": [28.6139, 77.2090],
+        "Karnataka": [15.3173, 75.7139], // Centering circle on state
+        "Tamil Nadu": [11.1271, 78.6569],
+        "West Bengal": [22.9868, 87.8550],
+        "Uttar Pradesh": [26.8467, 80.9462],
+        "Gujarat": [22.2587, 71.1924],
+        "Rajasthan": [27.0238, 74.2179],
+        "Telangana": [18.1124, 79.0193],
+        "Kerala": [10.8505, 76.2711]
+    };
+
+    let nMap;
+    let markers = {};
+
+    function initMap() {
+        // Center on India
+        nMap = L.map('nationalMap', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([20.5937, 78.9629], 5);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '©OpenStreetMap'
+        }).addTo(nMap);
+    }
+
+    async function updateNationalMap() {
+        try {
+            const resp = await fetch('/api/national');
+            const states = await resp.json();
+            const stateList = document.getElementById('stateList');
+
+            if (!states.length) return;
+
+            // Update Map Markers
+            states.forEach(s => {
+                const pos = stateGeo[s.name];
+                if (!pos) return;
+
+                const color = s.aqi > 250 ? '#EF4444' : s.aqi > 150 ? '#F59E0B' : '#10B981';
+                const intensity = Math.min(0.6, s.aqi / 1000);
+                const radius = 40000 + (s.aqi * 150);
+
+                if (markers[s.name]) {
+                    markers[s.name].setRadius(radius);
+                    markers[s.name].setStyle({ color: color, fillColor: color, fillOpacity: intensity });
+                } else {
+                    markers[s.name] = L.circle(pos, {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: intensity,
+                        weight: 2,
+                        radius: radius
+                    }).addTo(nMap).bindPopup(`<b>${s.name}</b><br>AQI: ${Math.round(s.aqi)}`);
+                }
+            });
+
+            // Update List
+            stateList.innerHTML = states.sort((a, b) => b.aqi - a.aqi).map(s => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all hover:scale-[1.02] cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full ${s.aqi > 250 ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : s.aqi > 150 ? 'bg-amber-500' : 'bg-emerald-500'}"></div>
+                        <span class="text-xs font-bold text-slate-700">${s.name}</span>
+                    </div>
+                    <span class="text-xs font-black text-[#0F4C5C]">${Math.round(s.aqi)}</span>
+                </div>
+            `).join('');
+
+        } catch (e) { console.error(e); }
+    }
+
+    window.addEventListener('load', () => {
+        initMap();
+        updateNationalMap();
+        setInterval(updateNationalMap, 3000);
+    });
+</script>
+
+<style>
+    .leaflet-container {
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    #nationalMap {
+        filter: grayscale(0.1) contrast(1.05);
+    }
+</style>
+{% endblock %}

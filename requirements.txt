@@ -1,0 +1,12 @@
+flask
+flask-login
+pathway
+openai
+pandas
+numpy
+fpdf2
+python-dotenv
+scikit-learn
+requests
+confluent-kafka
+python-magic

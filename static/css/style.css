@@ -1,0 +1,67 @@
+/* Professional UI Styling for EcoPulse AI */
+
+body {
+    background-color: #F8F9FA;
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Sidebar Customization */
+aside {
+    transition: all 0.3s ease;
+}
+
+/* Scrollbar Utility */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Glass & Shadow Cards */
+.bg-white {
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.bg-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(15, 76, 92, 0.1);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.5s ease forwards;
+}
+
+/* Chart Container Fixes */
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Alert Spacing */
+#alert-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+#alert-list::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}

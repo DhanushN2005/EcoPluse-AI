@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Live Status -->
+    <div class="flex justify-between items-end mb-4">
+        <div>
+            <h1 class="text-4xl font-black text-[#0F4C5C]">Control Center</h1>
+            <p class="text-slate-500 mt-1">Integrated Real-time Environmental & Policy Intelligence</p>
+        </div>
+        <div class="flex gap-4">
+            <div id="liveStatus"
+                class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                <div id="pulseDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span id="zoneLabel" class="text-sm font-bold text-slate-700">Live: District 7</span>
+            </div>
+            <button onclick="window.location.reload()"
+                class="bg-[#0F4C5C] text-white px-6 py-3 rounded-2xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                <i class="fas fa-sync-alt"></i>
+                <span class="font-bold text-sm">Refresh Room</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Top Row: Core Sensor Cards (Combined Old & New) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- AQI Card -->
+        <div
+            class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-xl transition-all">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Air Quality Index</h3>
+            <div class="flex items-end justify-between">
+                <div>
+                    <span id="aqiVal" class="text-4xl font-black text-[#0F4C5C]">--</span>
+                    <span class="text-xs font-bold text-slate-300 ml-1">AQI</span>
+                </div>
+                <div id="aqiBadge"
+                    class="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-lg text-[10px] font-bold uppercase">Optimal
+                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2">
+                <span id="aqiTrend" class="text-[10px] font-bold text-slate-400">Stable</span>
+                <div class="h-1 flex-grow bg-slate-100 rounded-full overflow-hidden">
+                    <div id="aqiBar" class="h-full bg-[#0F4C5C] transition-all duration-1000" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PM2.5 Card -->
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group hover:shadow-xl transition-all">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Particulate (PM2.5)</h3>
+            <div class="flex items-end justify-between">
+                <div>
+                    <span id="pm25Val" class="text-4xl font-black text-[#0F4C5C]">--</span>
+                    <span class="text-xs font-bold text-slate-300 ml-1">µg/m³</span>
+                </div>
+                <i class="fas fa-smog text-slate-200 text-2xl group-hover:text-[#4FD1C5] transition-colors"></i>
+            </div>
+        </div>
+
+        <!-- CO2 Card -->
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group hover:shadow-xl transition-all">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Carbon Concentration</h3>
+            <div class="flex items-end justify-between">
+                <div>
+                    <span id="co2Val" class="text-4xl font-black text-[#0F4C5C]">--</span>
+                    <span class="text-xs font-bold text-slate-300 ml-1">ppm</span>
+                </div>
+                <i class="fas fa-cloud-bolt text-slate-200 text-2xl group-hover:text-orange-400 transition-colors"></i>
+            </div>
+        </div>
+
+        <!-- Health Score Gauge (New) -->
+        <div
+            class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative group hover:shadow-xl transition-all">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Environment Health</h3>
+            <div class="flex items-center justify-center p-2">
+                <div class="relative w-20 h-20 flex items-center justify-center">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6" fill="transparent"
+                            class="text-slate-100"></circle>
+                        <circle id="healthCircle" cx="40" cy="40" r="36" stroke="currentColor" stroke-width="6"
+                            fill="transparent" stroke-dasharray="226" stroke-dashoffset="50"
+                            class="text-[#2ECC71] transition-all duration-1000"></circle>
+                    </svg>
+                    <span id="healthScore" class="absolute text-xl font-black text-[#0F4C5C]">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Row: Spatial & Attribution -->
+    <div class="grid grid-cols-12 gap-6">
+        <!-- Geospatial Heat Map Layer (Column 1-8) -->
+        <div class="col-span-12 lg:col-span-8 space-y-6">
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden relative">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-[#0F4C5C]/5 flex items-center justify-center text-[#0F4C5C]">
+                            <i class="fas fa-map-location-dot"></i>
+                        </div>
+                        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest">Live Spatial
+                            Intelligence</h3>
+                    </div>
+                </div>
+                <div id="map" class="w-full h-[500px] rounded-3xl bg-slate-50 z-0"></div>
+            </div>
+
+            <!-- Root Cause Summary Box -->
+            <div id="attributionSummary"
+                class="bg-[#0F4C5C] p-6 rounded-3xl shadow-lg text-white font-medium text-sm flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <i class="fas fa-robot text-2xl text-[#2ECC71]"></i>
+                <span id="summaryText">Initializing analytical summary...</span>
+            </div>
+        </div>
+
+        <!-- Sidebar Widgets (Column 9-12) -->
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+            <!-- Root Cause Attribution Bars -->
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Root Cause Attribution</h3>
+                <div class="space-y-8" id="attributionBars">
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-black text-slate-700">
+                            <span>Traffic Load</span>
+                            <span id="attrTrafficVal">--%</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div id="attrTrafficBar" class="h-full bg-[#0F4C5C] transition-all duration-1000"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-black text-slate-700">
+                            <span>Industrial Output</span>
+                            <span id="attrIndustrialVal">--%</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div id="attrIndustrialBar" class="h-full bg-orange-400 transition-all duration-1000"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs font-black text-slate-700">
+                            <span>Wind & Met Impacts</span>
+                            <span id="attrWindVal">--%</span>
+                        </div>
+                        <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div id="attrWindBar" class="h-full bg-[#4FD1C5] transition-all duration-1000"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Citizen Risk Notifications -->
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Citizen Advisory</h3>
+                <div class="space-y-4" id="advisoryContainer">
+                    <div
+                        class="p-6 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-center italic text-xs text-slate-400">
+                        Analyzing community risk levels...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footprint Calculator -->
+            <div class="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100">
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-[10px] font-black text-emerald-800 uppercase tracking-widest">CO2 Day Load</h3>
+                    <div
+                        class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                        <i class="fas fa-leaf text-xs"></i>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <span id="carbonDay" class="text-4xl font-black text-[#0F4C5C]">--</span>
+                    <span class="text-xs font-bold text-emerald-800/60 ml-1">Tons / Day</span>
+                </div>
+                <div class="h-1.5 w-full bg-emerald-200/30 rounded-full overflow-hidden">
+                    <div id="carbonBar" class="h-full bg-emerald-500 rounded-full" style="width: 20%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Trend Analysis -->
+    <div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h3 class="text-xl font-black text-slate-800">Trend Intelligence</h3>
+                <p class="text-xs text-slate-400 font-medium">Historical baseline vs real-time volatility tracking.</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#0F4C5C]"></div>
+                    <span class="text-[10px] font-black uppercase text-slate-400">AQI Real-time</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-[#4FD1C5]"></div>
+                    <span class="text-[10px] font-black uppercase text-slate-400">Interaction Index</span>
+                </div>
+            </div>
+        </div>
+        <div class="h-[300px]">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Map Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const map = L.map('map', { zoomControl: false }).setView([12.9716, 77.5946], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '©OpenStreetMap'
+        }).addTo(map);
+
+        const markers = {
+            industrial: L.circle([12.98, 77.60], { color: '#e67e22', fillColor: '#e67e22', fillOpacity: 0.2, radius: 1000 }).addTo(map),
+            residential: L.circle([12.96, 77.58], { color: '#2ecc71', fillColor: '#2ecc71', fillOpacity: 0.2, radius: 800 }).addTo(map),
+            heatPoint: L.circle([12.9716, 77.5946], { color: '#e74c3c', weight: 0, fillColor: '#e74c3c', fillOpacity: 0.4, radius: 500 }).addTo(map)
+        };
+
+        window.updateMapIntensity = function (aqi) {
+            const intensity = Math.min(0.8, aqi / 300);
+            markers.heatPoint.setRadius(200 + (aqi * 4));
+            markers.heatPoint.setStyle({ fillOpacity: intensity });
+            if (aqi > 200) markers.heatPoint.setStyle({ color: '#c0392b', weight: 2 });
+            else markers.heatPoint.setStyle({ color: '#e74c3c', weight: 0 });
+        };
+    });
+</script>
+{% endblock %}

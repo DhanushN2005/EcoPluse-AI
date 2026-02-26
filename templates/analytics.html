@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-10">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-4xl font-black text-[#0F4C5C]">Strategic Analytics</h1>
+            <p class="text-slate-500 mt-1">Simulate policies and analyze long-term patterns</p>
+        </div>
+        <div class="flex gap-4 items-center">
+            <a href="/reports/mayor-brief"
+                class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-emerald-700 transition-all">
+                <i class="fas fa-file-signature"></i>
+                Generate Mayor Briefing
+            </a>
+            <div class="inline-flex rounded-xl shadow-sm bg-white p-1 border border-slate-100">
+                <button
+                    class="px-6 py-2 rounded-lg bg-[#0F4C5C] text-white text-xs font-bold transition-all">Today</button>
+                <button
+                    class="px-6 py-2 rounded-lg text-slate-400 text-xs font-bold hover:text-[#0F4C5C] transition-all">Weekly</button>
+                <button
+                    class="px-6 py-2 rounded-lg text-slate-400 text-xs font-bold hover:text-[#0F4C5C] transition-all">Historical</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Policy Simulation Mode (NEW - Very Strong) -->
+    <div class="bg-white rounded-[3rem] shadow-2xl border border-slate-50 overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3">
+            <!-- Simulation Controls -->
+            <div class="p-10 bg-slate-50 border-r border-slate-100 space-y-10">
+                <div>
+                    <h3
+                        class="text-xs font-black text-[#0F4C5C] uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <i class="fas fa-sliders-h"></i> Policy Controls
+                    </h3>
+                    <p class="text-[10px] text-slate-400 font-medium">Adjust parameters to simulate AQI impact</p>
+                </div>
+
+                <div class="space-y-8">
+                    <!-- Traffic Slider -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700">Traffic Reduction</label>
+                            <span id="trafficReductionVal" class="text-xs font-black text-[#0F4C5C]">0%</span>
+                        </div>
+                        <input type="range" id="trafficReduction" min="0" max="80" value="0"
+                            class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#0F4C5C]">
+                        <p class="text-[9px] text-slate-400 leading-tight italic">Estimated impact: Lowers NOx and PM2.5
+                            levels by ~0.4x ratio.</p>
+                    </div>
+
+                    <!-- Industrial Slider -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700">Industrial Restriction</label>
+                            <span id="industrialReductionVal" class="text-xs font-black text-[#0F4C5C]">0%</span>
+                        </div>
+                        <input type="range" id="industrialReduction" min="0" max="100" value="0"
+                            class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                    </div>
+
+                    <!-- Green Cover Slider -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700">Urban Forestry Expansion</label>
+                            <span id="greenCoverVal" class="text-xs font-black text-[#2ECC71]">0%</span>
+                        </div>
+                        <input type="range" id="greenCover" min="0" max="50" value="0"
+                            class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#2ECC71]">
+                    </div>
+                </div>
+
+                <button id="runSimulation"
+                    class="w-full bg-[#0F4C5C] text-white py-5 rounded-[1.5rem] font-black text-sm shadow-xl shadow-[#0F4C5C]/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    Run Policy Simulation
+                </button>
+            </div>
+
+            <!-- Simulation Output -->
+            <div class="lg:col-span-2 p-10 flex flex-col justify-center">
+                <div class="mb-10 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800">Impact Forecast</h2>
+                        <p class="text-sm text-slate-400 font-medium">Predicted environmental response to selected
+                            policy.</p>
+                    </div>
+                    <div id="simStatus"
+                        class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-full text-[10px] font-black uppercase hidden">
+                        Simulation Live</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 mb-10">
+                    <div
+                        class="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 text-center relative overflow-hidden">
+                        <span
+                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Baseline
+                            AQI</span>
+                        <div id="baselineAQI" class="text-4xl font-black text-slate-800">--</div>
+                    </div>
+                    <div class="p-8 bg-[#2ECC71]/10 rounded-[2rem] border border-[#2ECC71]/20 text-center">
+                        <span
+                            class="text-[10px] font-black text-[#2ECC71] uppercase tracking-widest block mb-1">Simulated
+                            AQI</span>
+                        <div id="simulatedAQI" class="text-4xl font-black text-[#0F4C5C]">--</div>
+                    </div>
+                </div>
+
+                <div class="h-[250px]">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparative Analytics (Column 2-Section) -->
+    <div class="grid grid-cols-2 gap-10">
+        <!-- Historical Pattern Intelligence (3.4) -->
+        <div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-50">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Weekly Peak Analysis</h3>
+            <div class="space-y-6">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 text-xs font-bold text-slate-400">Mon-Wed</div>
+                    <div class="flex-grow h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-[#0F4C5C]" style="width: 72%"></div>
+                    </div>
+                    <div class="text-xs font-black text-slate-700">High</div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="w-16 text-xs font-bold text-slate-400">Thu-Sat</div>
+                    <div class="flex-grow h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-[#2ECC71]" style="width: 45%"></div>
+                    </div>
+                    <div class="text-xs font-black text-slate-700">Stable</div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="w-16 text-xs font-bold text-slate-400">Sunday</div>
+                    <div class="flex-grow h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-400" style="width: 30%"></div>
+                    </div>
+                    <div class="text-xs font-black text-slate-700">Clean</div>
+                </div>
+            </div>
+            <div
+                class="mt-8 p-6 bg-[#F8F9FA] rounded-[1.5rem] border border-slate-100 italic text-[11px] text-slate-500">
+                "System identifies recurring pollution patterns during Tuesday morning traffic hours (8:30 AM - 10:15
+                AM)."
+            </div>
+        </div>
+
+        <!-- Anomaly Intensity -->
+        <div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-50">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Anomaly Intensity Frequency
+            </h3>
+            <div class="flex items-center justify-center p-4">
+                <div
+                    class="w-48 h-48 rounded-full border-[15px] border-slate-50 flex items-center justify-center relative">
+                    <div class="w-40 h-40 rounded-full border-[15px] border-[#0F4C5C] flex items-center justify-center">
+                        <div class="text-center">
+                            <span class="text-3xl font-black text-[#0F4C5C]">14%</span>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Spike Freq</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center mt-6 text-xs font-medium text-slate-500 underline cursor-pointer">View Spike Log
+                Analysis →</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sliders = {
+            traffic: document.getElementById('trafficReduction'),
+            industrial: document.getElementById('industrialReduction'),
+            green: document.getElementById('greenCover')
+        };
+
+        const displays = {
+            traffic: document.getElementById('trafficReductionVal'),
+            industrial: document.getElementById('industrialReductionVal'),
+            green: document.getElementById('greenCoverVal')
+        };
+
+        // Period Toggles (Fixing "not switching to weekly")
+        const periodBtns = document.querySelectorAll('.inline-flex button');
+        periodBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                periodBtns.forEach(b => {
+                    b.classList.remove('bg-[#0F4C5C]', 'text-white');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-[#0F4C5C]', 'text-white');
+                btn.classList.remove('text-slate-400');
+
+                // Update chart labels/data based on period
+                if (btn.innerText === "Weekly") {
+                    predChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    predChart.data.datasets[0].data = [120, 150, 180, 140, 130, 110, 95];
+                    predChart.update();
+                } else if (btn.innerText === "Today") {
+                    predChart.data.labels = ['Now', '+1h', '+2h', '+3h', '+4h', '+6h'];
+                    predChart.data.datasets[0].data = [120, 135, 140, 130, 125, 115];
+                    predChart.update();
+                }
+            });
+        });
+
+        // Update labels on slide
+        sliders.traffic.addEventListener('input', () => {
+            displays.traffic.innerText = `${sliders.traffic.value}%`;
+        });
+        sliders.industrial.addEventListener('input', () => {
+            displays.industrial.innerText = `${sliders.industrial.value}%`;
+        });
+        sliders.green.addEventListener('input', () => {
+            displays.green.innerText = `${sliders.green.value}%`;
+        });
+        // Prediction Chart
+        const ctx = document.getElementById('predictionChart').getContext('2d');
+        const predChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Now', '+1h', '+2h', '+3h', '+4h', '+6h'],
+                datasets: [
+                    {
+                        label: 'Current Trend',
+                        data: [120, 135, 140, 130, 125, 115],
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Simulated Policy',
+                        data: [120, 110, 95, 82, 75, 68],
+                        borderColor: '#2ECC71',
+                        borderWidth: 4,
+                        fill: true,
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // Run Simulation
+        document.getElementById('runSimulation').addEventListener('click', async () => {
+            const btn = document.getElementById('runSimulation');
+            const baselineEl = document.getElementById('baselineAQI');
+            const simulatedEl = document.getElementById('simulatedAQI');
+
+            btn.innerText = "Simulating...";
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/api/metrics');
+                const rootData = await resp.json();
+                const latest = rootData.latest || { aqi: 0 };
+
+                baselineEl.innerText = Math.round(latest.aqi) || "--";
+                document.getElementById('simStatus').classList.remove('hidden');
+
+                const params = new URLSearchParams({
+                    traffic_reduction: sliders.traffic.value,
+                    industrial_restriction: sliders.industrial.value,
+                    green_cover: sliders.green.value
+                });
+
+                const simResp = await fetch(`/api/metrics?${params.toString()}`);
+                const simData = await simResp.json();
+
+                if (simData.latest) {
+                    const simulated = simData.latest;
+                    simulatedEl.innerText = Math.round(simulated.aqi);
+
+                    predChart.data.datasets[1].data = [
+                        latest.aqi, simulated.aqi * 1.05, simulated.aqi,
+                        simulated.aqi * 0.95, simulated.aqi * 0.9, simulated.aqi * 0.85
+                    ];
+                    predChart.update();
+                }
+            } catch (err) {
+                console.error("Simulation failed:", err);
+            } finally {
+                btn.innerText = "Run Policy Simulation";
+                btn.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

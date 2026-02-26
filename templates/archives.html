@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block page_title %}Historical Environmental Archives{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+    <!-- Header -->
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-4xl font-black text-[#0F4C5C]">Historical Archives</h1>
+            <p class="text-slate-500 mt-1">Select a past date to retrieve comprehensive environmental intelligence logs.
+            </p>
+        </div>
+        <div class="flex gap-4">
+            <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+                <i class="fas fa-folder-open text-amber-500"></i>
+                <span class="text-xs font-bold text-slate-700">Database Size: 1.2TB</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <!-- Calendar Selection Sidebar -->
+        <div class="lg:col-span-4 space-y-8">
+            <div class="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-50">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-xs font-black text-[#0F4C5C] uppercase tracking-[0.2em]">Select Date</h3>
+                    <div class="flex gap-2">
+                        <button class="p-2 text-slate-400 hover:text-[#0F4C5C] transition-colors"><i
+                                class="fas fa-chevron-left text-[10px]"></i></button>
+                        <button class="p-2 text-slate-400 hover:text-[#0F4C5C] transition-colors"><i
+                                class="fas fa-chevron-right text-[10px]"></i></button>
+                    </div>
+                </div>
+
+                <!-- Custom Premium Calendar -->
+                <div class="space-y-6">
+                    <div class="grid grid-cols-7 text-center">
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Su</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Mo</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Tu</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">We</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Th</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Fr</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase">Sa</span>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1" id="calendarGrid">
+                        <!-- Calendar days will be rendered here via JS -->
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-slate-50">
+                    <div class="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <i class="fas fa-circle-check text-emerald-500"></i>
+                        <p class="text-[10px] font-bold text-emerald-800 uppercase">Data verified for Feb 2026</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-[#0F4C5C] p-8 rounded-[3rem] shadow-2xl text-white">
+                <h4 class="text-[10px] font-black text-teal-200 uppercase tracking-widest mb-6">Archive Integrity</h4>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-teal-50">Uptime</span>
+                        <span class="text-xs font-black">99.98%</span>
+                    </div>
+                    <div class="h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-[#2ECC71]" style="width: 99.98%"></div>
+                    </div>
+                    <p class="text-[9px] text-teal-200/60 leading-relaxed italic mt-4">
+                        Distributed ledger ensures environmental data immutability.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Display Area -->
+        <div class="lg:col-span-8">
+            <div id="reportLoader" class="hidden">
+                <div
+                    class="bg-white p-20 rounded-[3.5rem] shadow-xl border border-slate-50 flex flex-col items-center justify-center space-y-6">
+                    <div class="w-16 h-16 border-4 border-[#0F4C5C]/10 border-t-[#0F4C5C] rounded-full animate-spin">
+                    </div>
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Querying
+                        Archives...</span>
+                </div>
+            </div>
+
+            <div id="reportContent" class="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
+                <div class="bg-white p-10 rounded-[3.5rem] shadow-xl border border-slate-50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-10">
+                        <i class="fas fa-leaf text-8xl text-slate-50 pointer-events-none"></i>
+                    </div>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-3 mb-8">
+                            <div
+                                class="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase">
+                                Official Record</div>
+                            <span id="reportDateDisplay" class="text-xs font-bold text-slate-400">Loading...</span>
+                        </div>
+
+                        <h2 class="text-3xl font-black text-[#0F4C5C] mb-4">Daily Environmental Synthesis</h2>
+                        <p class="text-slate-500 max-w-xl leading-relaxed mb-10">
+                            A comprehensive overview of air quality volatility, carbon footprint analysis, and policy
+                            response effectiveness for the selected period.
+                        </p>
+
+                        <div class="grid grid-cols-3 gap-6 mb-10">
+                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Average
+                                    AQI</span>
+                                <span id="avgAQI" class="text-2xl font-black text-slate-800">--</span>
+                            </div>
+                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">CO2 Peak</span>
+                                <span id="peakCO2" class="text-2xl font-black text-slate-800">-- ppm</span>
+                            </div>
+                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                <span class="text-[10px] font-black text-slate-400 uppercase block mb-1">Health
+                                    Impact</span>
+                                <span id="healthGrade" class="text-2xl font-black text-emerald-600">--</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <h4 class="text-xs font-black text-slate-800 uppercase tracking-widest">Incident Summary
+                            </h4>
+                            <div id="incidentLogs" class="space-y-3">
+                                <!-- Log items -->
+                            </div>
+                        </div>
+
+                        <div class="mt-12 flex gap-4">
+                            <button id="exportArchiveBtn"
+                                class="bg-[#0F4C5C] text-white px-8 py-4 rounded-2xl font-black text-xs shadow-lg hover:scale-105 transition-all">
+                                <i class="fas fa-download mr-2"></i> Export Historical PDF
+                            </button>
+                            <button id="shareArchiveBtn"
+                                class="bg-white text-slate-600 border border-slate-200 px-8 py-4 rounded-2xl font-black text-xs hover:bg-slate-50 transition-all">
+                                <i class="fas fa-share-nodes mr-2"></i> Share Intelligence
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategic Insights Row -->
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="bg-white p-8 rounded-[3rem] shadow-xl border border-slate-50">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Policy Efficacy
+                        </h4>
+                        <div class="h-[150px]">
+                            <canvas id="archiveChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50 p-8 rounded-[3rem] border border-emerald-100 border-dashed">
+                        <h4 class="text-xs font-black text-emerald-800 uppercase tracking-widest mb-4">System Remark
+                        </h4>
+                        <p id="systemRemark" class="text-xs text-emerald-800/70 font-bold leading-relaxed">
+                            Select a date on the calendar to regenerate historical AI commentary and pattern recognition
+                            notes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarGrid = document.getElementById('calendarGrid');
+        const reportContent = document.getElementById('reportContent');
+        const reportLoader = document.getElementById('reportLoader');
+        const reportDateDisplay = document.getElementById('reportDateDisplay');
+        const avgAQI = document.getElementById('avgAQI');
+        const peakCO2 = document.getElementById('peakCO2');
+        const healthGrade = document.getElementById('healthGrade');
+        const systemRemark = document.getElementById('systemRemark');
+        const incidentLogs = document.getElementById('incidentLogs');
+
+        let selectedDay = 26;
+
+        function renderCalendar() {
+            calendarGrid.innerHTML = '';
+            // Render 28 days for Feb 2026
+            for (let i = 1; i <= 28; i++) {
+                const day = document.createElement('div');
+                const isSelected = i === selectedDay;
+                const isToday = i === 26;
+
+                day.className = `h-10 w-full flex items-center justify-center rounded-xl text-xs font-black cursor-pointer transition-all
+                    ${isSelected ? 'bg-[#0F4C5C] text-white shadow-lg scale-110 z-10' : 'text-slate-600 hover:bg-slate-50 hover:text-[#0F4C5C]'}
+                    ${isToday && !isSelected ? 'border border-[#0F4C5C]/20 text-[#0F4C5C]' : ''}
+                `;
+                day.innerText = i;
+                day.addEventListener('click', () => {
+                    selectedDay = i;
+                    renderCalendar();
+                    fetchReport(i);
+                });
+                calendarGrid.appendChild(day);
+            }
+        }
+
+        async function fetchReport(day) {
+            reportContent.classList.add('opacity-30', 'pointer-events-none');
+            reportLoader.classList.remove('hidden');
+
+            // Simulate Network delay for "premium" feel
+            setTimeout(() => {
+                reportContent.classList.remove('opacity-30', 'pointer-events-none');
+                reportLoader.classList.add('hidden');
+
+                const dateStr = `${day} Feb 2026`;
+                reportDateDisplay.innerText = dateStr;
+
+                // Fake dynamic data based on day
+                const mockAQI = 150 + (day * 3) % 150;
+                const mockCO2 = 300 + (day * 4) % 100;
+                const grades = ['Optimal', 'Steady', 'Moderate', 'Vulnerable', 'Critical'];
+                const grade = grades[day % 5];
+
+                avgAQI.innerText = mockAQI;
+                peakCO2.innerText = `${mockCO2} ppm`;
+                healthGrade.innerText = grade;
+                healthGrade.className = `text-2xl font-black ${grade === 'Optimal' ? 'text-emerald-500' : grade === 'Steady' ? 'text-teal-500' : 'text-orange-500'}`;
+
+                systemRemark.innerText = `On ${dateStr}, the system recorded a ${day % 2 === 0 ? 'steady decline' : 'sudden spike'} in carbon concentration localized around the Industrial North. Policy efficacy was rated at ${70 + (day % 30)}% following the grid optimization directive.`;
+
+                incidentLogs.innerHTML = `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+                            <span class="text-[11px] font-bold text-slate-700">Traffic Density Alert - H3 Area</span>
+                        </div>
+                        <span class="text-[10px] font-black text-slate-400">08:45 AM</span>
+                    </div>
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                            <span class="text-[11px] font-bold text-slate-700">Grid Stabilization Complete</span>
+                        </div>
+                        <span class="text-[10px] font-black text-slate-400">02:15 PM</span>
+                    </div>
+                `;
+
+                updateChart(mockAQI);
+            }, 800);
+        }
+
+        const ctx = document.getElementById('archiveChart').getContext('2d');
+        const archiveChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                datasets: [{
+                    label: 'AQI Density',
+                    data: [120, 110, 240, 180, 190, 150],
+                    backgroundColor: '#0F4C5C',
+                    borderRadius: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { display: false }, ticks: { display: false } },
+                    x: { grid: { display: false }, ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+
+        function updateChart(base) {
+            archiveChart.data.datasets[0].data = [
+                base * 0.8, base * 0.7, base * 1.4, base * 1.1, base * 1.2, base * 0.9
+            ];
+            archiveChart.update();
+        }
+
+        // Export PDF Logic
+        document.getElementById('exportArchiveBtn').addEventListener('click', () => {
+            window.location.href = '/reports/export';
+        });
+
+        // Share Logic
+        document.getElementById('shareArchiveBtn').addEventListener('click', async () => {
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'EcoPulse AI Historical Report',
+                        text: `Check out the environmental intelligence for ${selectedDay} Feb 2026.`,
+                        url: window.location.href
+                    });
+                } catch (err) { console.log('Share failed:', err); }
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Intelligence Link copied to clipboard!');
+            }
+        });
+
+        renderCalendar();
+        fetchReport(26);
+    });
+</script>
+{% endblock %}
