@@ -1,12 +1,14 @@
-from openai import OpenAI
 import os
-import sys
-
-# Ensure parent directory is in path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import json
+import logging
+from typing import Dict, Any, List, Optional
+from openai import OpenAI
 from ecopulse_ai.config import OPENAI_API_KEY
 from ecopulse_ai.analytics.health_score import calculate_composite_health
 
+logger = logging.getLogger("Analytics-Planner")
+
+# Initialize OpenAI client with project-wide key
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 PLANNER_PROMPT = """
@@ -37,7 +39,18 @@ Focus on city-wide actions: adjusting outdoor activity timing, encouraging remot
 Be specific and professional.
 """
 
-def generate_action_plan(latest_metrics, forecast, alerts):
+def generate_action_plan(latest_metrics: Dict[str, Any], forecast: float, alerts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Orchestrates the generation of an AI-driven operational plan using the Greenhouse Gas Health engine.
+    
+    Args:
+        latest_metrics (Dict[str, Any]): The latest sensor telemetry.
+        forecast (float): The projected AQI for the next period.
+        alerts (List[Dict[str, Any]]): Currently active system alerts.
+        
+    Returns:
+        Dict[str, Any]: A structured action plan from the LLM or a safe fallback.
+    """
     health_score = calculate_composite_health(
         latest_metrics.get('aqi', 0),
         latest_metrics.get('co2', 0),
@@ -45,19 +58,21 @@ def generate_action_plan(latest_metrics, forecast, alerts):
         latest_metrics.get('humidity', 50)
     )
     
-    # Calculate a mock risk probability based on AQI and forecast
-    risk_prob = min(95, (latest_metrics.get('aqi', 0) / 300) * 100 + (10 if forecast > latest_metrics.get('aqi', 0) else -5))
+    # Calculate a heuristic risk probability based on current levels and trends
+    current_aqi = latest_metrics.get('aqi', 0)
+    risk_prob = min(95, (current_aqi / 300) * 100 + (10 if forecast > current_aqi else -5))
     risk_prob = round(max(5, risk_prob), 1)
 
     context = f"""
-    Live AQI: {latest_metrics.get('aqi')}
-    Forecast: {forecast}
-    Alerts: {alerts}
-    Health Score: {health_score}
-    Risk Probability: {risk_prob}%
+    Live AQI: {current_aqi}
+    Forecasted AQI: {forecast}
+    System Alerts: {alerts}
+    Environmental Health Score: {health_score}
+    Calculated Risk Probability: {risk_prob}%
     """
 
     try:
+        logger.info("Requesting operational action plan from AI engine...")
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -65,16 +80,22 @@ def generate_action_plan(latest_metrics, forecast, alerts):
                 {"role": "user", "content": f"Generate the action plan for this context: {context}"}
             ],
             response_format={ "type": "json_object" },
-            temperature=0.7
+            temperature=0.7,
+            timeout=10.0
         )
-        import json
+        
         plan = json.loads(response.choices[0].message.content)
-        plan['health_score'] = health_score
-        plan['risk_prob'] = risk_prob
-        plan['metrics'] = latest_metrics
+        
+        # Enforce consistent structure
+        plan.update({
+            'health_score': health_score,
+            'risk_prob': risk_prob,
+            'metrics': latest_metrics
+        })
         return plan
+        
     except Exception as e:
-        # Fallback for demo or error
+        logger.warning(f"AI Plan Generation failed (using static fallback): {e}")
         return {
             "summary": "Air quality is deteriorating; proactive measures required.",
             "recommendations": [

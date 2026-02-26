@@ -1,27 +1,54 @@
-from datetime import datetime
-import sys
-import os
+import logging
+from typing import List, Dict, Any
+from ecopulse_ai.config import THRESHOLDS
 
-# Ensure parent directory is in path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import THRESHOLDS
+logger = logging.getLogger("Analytics-Alerts")
 
-def get_alert_status(current_data):
-    """Checks current data against thresholds and returns active alerts."""
-    alerts = []
+def get_alert_status(current_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Evaluates current environmental telemetry against predefined safety thresholds.
     
-    # AQI Check
-    aqi = current_data.get('aqi', 0)
+    Args:
+        current_data (Dict[str, Any]): Dictionary containing sensor readings (aqi, co2, etc.).
+        
+    Returns:
+        List[Dict[str, Any]]: A list of active alert dictionaries with severity and recommendations.
+    """
+    alerts: List[Dict[str, Any]] = []
+    
+    # Air Quality Index (AQI) Evaluation
+    aqi = float(current_data.get('aqi', 0))
     if aqi >= THRESHOLDS["AQI"]["emergency"]:
-        alerts.append({"type": "AQI", "level": "Emergency", "value": aqi, "msg": "Hazardous air quality! Immediate shelter advised."})
+        alerts.append({
+            "type": "AQI", 
+            "level": "Emergency", 
+            "value": aqi, 
+            "msg": "Hazardous air quality! Immediate shelter advised. Cease all outdoor activities."
+        })
     elif aqi >= THRESHOLDS["AQI"]["critical"]:
-        alerts.append({"type": "AQI", "level": "Critical", "value": aqi, "msg": "Very unhealthy air levels detected."})
+        alerts.append({
+            "type": "AQI", 
+            "level": "Critical", 
+            "value": aqi, 
+            "msg": "Very unhealthy air levels detected. High-risk groups should remain indoors."
+        })
     elif aqi >= THRESHOLDS["AQI"]["warning"]:
-        alerts.append({"type": "AQI", "level": "Warning", "value": aqi, "msg": "Air quality is deteriorating."})
+        alerts.append({
+            "type": "AQI", 
+            "level": "Warning", 
+            "value": aqi, 
+            "msg": "Air quality is deteriorating. Moderate health risks for sensitive individuals."
+        })
 
-    # CO2 Check
-    co2 = current_data.get('co2', 0)
+    # Carbon Dioxide (CO2) Evaluation
+    co2 = float(current_data.get('co2', 0))
     if co2 >= THRESHOLDS["CO2"]["warning"]:
-        alerts.append({"type": "CO2", "level": "Warning", "value": co2, "msg": "High carbon dioxide levels. Ventilation needed."})
+        alerts.append({
+            "type": "CO2", 
+            "level": "Warning", 
+            "value": co2, 
+            "msg": "High carbon dioxide levels detected. Ventilation and air circulation required."
+        })
 
+    logger.debug(f"Calculated {len(alerts)} active alerts for current data state.")
     return alerts
