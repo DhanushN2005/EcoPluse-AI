@@ -196,3 +196,6 @@ Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
   <b>Built with ❤️ by <a href="https://github.com/DhanushN2005">Dhanush N</a></b><br>
   <i>Empowering Cities with Real-Time Environmental Vision.</i>
 </p>
+
+---
+*This repository has undergone a Final Quality Review and Senior Engineering Refactor (Feb 2026).*
