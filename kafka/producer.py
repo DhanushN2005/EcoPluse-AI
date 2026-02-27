@@ -18,28 +18,29 @@ from ecopulse_ai.config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, SIMULATOR_I
 
 # Configure module-level logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("Kafka-Producer")
+
 
 def delivery_report(err: Optional[Exception], msg: Message) -> None:
     """
     Reports the success or failure of a message delivery.
-    
+
     Args:
         err (Optional[Exception]): The error if delivery failed.
         msg (Message): The Kafka message object.
     """
     if err is not None:
-        logger.error(f'Message delivery failed: {err}')
+        logger.error(f"Message delivery failed: {err}")
     else:
-        logger.debug(f'Message delivered to {msg.topic()} [{msg.partition()}]')
+        logger.debug(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+
 
 def generate_sensor_data() -> Generator[Dict[str, Any], None, None]:
     """
     Generates a continuous stream of realistic environmental sensor data using a random walk.
-    
+
     Yields:
         Dict[str, Any]: A dictionary containing telemetry data.
     """
@@ -54,14 +55,14 @@ def generate_sensor_data() -> Generator[Dict[str, Any], None, None]:
     industrial = random.uniform(10, 30)
 
     logger.info("Starting sensor data generation loop...")
-    
+
     while True:
         # Apply random walk to simulate natural variance
         aqi += random.uniform(-2, 2)
         pm25 += random.uniform(-1, 1)
         co2 += random.uniform(-5, 5)
         temp += random.uniform(-0.1, 0.1)
-        
+
         # Occasional spikes to simulate environmental incidents
         if random.random() < 0.05:
             aqi += random.uniform(30, 70)
@@ -82,18 +83,19 @@ def generate_sensor_data() -> Generator[Dict[str, Any], None, None]:
             "humidity": round(humidity, 2),
             "wind_speed": round(wind_speed, 2),
             "traffic_density": round(traffic, 2),
-            "industrial_index": round(industrial, 2)
+            "industrial_index": round(industrial, 2),
         }
         yield data
         time.sleep(SIMULATOR_INTERVAL)
+
 
 def run_producer() -> None:
     """
     Connects to the Kafka broker and publishes simulated telemetry data.
     """
     logger.info(f"Initializing Kafka producer for topic: {KAFKA_TOPIC}")
-    conf = {'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS}
-    
+    conf = {"bootstrap.servers": KAFKA_BOOTSTRAP_SERVERS}
+
     try:
         producer = Producer(conf)
     except Exception as e:
@@ -103,10 +105,7 @@ def run_producer() -> None:
     try:
         for data in generate_sensor_data():
             producer.produce(
-                KAFKA_TOPIC, 
-                key=str(time.time()), 
-                value=json.dumps(data),
-                callback=delivery_report
+                KAFKA_TOPIC, key=str(time.time()), value=json.dumps(data), callback=delivery_report
             )
             producer.poll(0)
             logger.info(f"Sent Telemetry -> AQI: {data['aqi']} | CO2: {data['co2']}")
@@ -117,6 +116,7 @@ def run_producer() -> None:
     finally:
         logger.info("Flushing Kafka producer...")
         producer.flush()
+
 
 if __name__ == "__main__":
     run_producer()

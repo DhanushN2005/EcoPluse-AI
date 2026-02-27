@@ -1,6 +1,6 @@
 """
 EcoPulse AI Web Routing & Proxy Layer.
-Orchestrates the interaction between the Flask frontend, the streaming analytics engine, 
+Orchestrates the interaction between the Flask frontend, the streaming analytics engine,
 and the AI reasoning services.
 """
 
@@ -38,7 +38,10 @@ main_bp = Blueprint("main", __name__)
 
 # --- Helper Utilities (Modular Design) ---
 
-def _fetch_streaming_data(endpoint: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+
+def _fetch_streaming_data(
+    endpoint: str, params: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
     """
     Modular abstraction for fetching telemetry from the Pathway Analytics Engine.
     """
@@ -61,7 +64,7 @@ def _generate_metric_package(data: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     latest = data[-1]
     history = [d.get("aqi", 0) for d in data[-20:]]
-    
+
     return {
         "latest": latest,
         "alerts": get_alert_status(latest),
@@ -71,6 +74,7 @@ def _generate_metric_package(data: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # --- Authentication Routes ---
+
 
 @main_bp.route("/login", methods=["GET", "POST"])
 def login() -> Union[Response, str]:
@@ -89,7 +93,7 @@ def login() -> Union[Response, str]:
             login_user(user)
             logger.info(f"Session established for user: {email}")
             return redirect(url_for("main.dashboard"))
-        
+
         logger.warning(f"Unauthorized login attempt blocked for: {email}")
         flash("Invalid email or password.")
 
@@ -106,6 +110,7 @@ def logout() -> Response:
 
 
 # --- Dashboard & View Presentation ---
+
 
 @main_bp.route("/")
 @login_required
@@ -158,12 +163,14 @@ def action_plan() -> Union[Response, str]:
     alerts = get_alert_status(latest)
 
     from ecopulse_ai.analytics.planner import generate_action_plan
+
     plan = generate_action_plan(latest, forecast, alerts)
-    
+
     return render_template("action_plan.html", plan=plan)
 
 
 # --- Data & Proxy API Endpoints ---
+
 
 @main_bp.route("/api/metrics")
 @login_required
@@ -172,7 +179,7 @@ def get_metrics() -> Response:
     data = _fetch_streaming_data("environmental_metrics", params=request.args)
     if not data:
         return jsonify({"error": "Service unavailable"}), 503
-    
+
     package = _generate_metric_package(data)
     return jsonify(package)
 
@@ -195,7 +202,7 @@ def chat() -> Response:
     """Context-aware Copilot integration endpoint."""
     body = request.json or {}
     query = body.get("query")
-    
+
     if not query:
         return jsonify({"error": "Query string is mandatory"}), 400
 
@@ -209,16 +216,18 @@ def chat() -> Response:
 
 # --- Document Generation & Exports ---
 
+
 @main_bp.route("/reports/export")
 @login_required
 def export_report() -> Response:
     """Orchestrates the generation of a high-fidelity environmental audit."""
     data = _fetch_streaming_data("environmental_metrics")
-    
+
     filename = f"ecopulse_audit_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     report_path = os.path.join(REPORT_DIR, filename)
 
     from ecopulse_ai.reports.generator import generate_full_report
+
     generate_full_report(data, report_path)
 
     return send_file(report_path, as_attachment=True)
@@ -229,11 +238,12 @@ def export_report() -> Response:
 def export_mayor_brief() -> Response:
     """Orchestrates the generation of a strategic executive briefing."""
     data = _fetch_streaming_data("environmental_metrics")
-    
+
     filename = f"mayor_briefing_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     report_path = os.path.join(REPORT_DIR, filename)
 
     from ecopulse_ai.reports.generator import generate_mayor_briefing
+
     generate_mayor_briefing(data, report_path)
 
     return send_file(report_path, as_attachment=True)

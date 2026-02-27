@@ -30,11 +30,11 @@ logger = logging.getLogger("Pathway-Pipeline")
 def apply_simulation(aqi: float, params: Dict[str, Any]) -> float:
     """
     Predictively adjusts AQI based on hypothetical urban planning simulations.
-    
+
     Args:
         aqi (float): The baseline AQI.
         params (Dict[str, Any]): Simulation coefficients (traffic, industrial, green cover).
-        
+
     Returns:
         float: The simulated AQI value.
     """
@@ -49,7 +49,9 @@ def apply_simulation(aqi: float, params: Dict[str, Any]) -> float:
     return round(impacted_aqi, 2)
 
 
-def compute_attribution(traffic: float, industrial: float, wind: float, temp: float) -> Dict[str, float]:
+def compute_attribution(
+    traffic: float, industrial: float, wind: float, temp: float
+) -> Dict[str, float]:
     """
     Identifies the primary sources of environmental pollution based on telemetry.
     """
@@ -204,7 +206,9 @@ def run_shim_pipeline() -> None:
     def get_metrics() -> Response:
         """Fetches telemetry with optional on-the-fly simulation support."""
         if request.args.get("traffic_reduction") and state["data"]:
-            simulated = calculate_analytics(state["data"][-1].copy(), history=state["data"], simulation_params=request.args)
+            simulated = calculate_analytics(
+                state["data"][-1].copy(), history=state["data"], simulation_params=request.args
+            )
             return jsonify([simulated])
         return jsonify(state["data"])
 
@@ -214,24 +218,52 @@ def run_shim_pipeline() -> None:
             return jsonify([])
         latest = state["data"][-1]
         base = float(latest.get("aqi", 0))
-        return jsonify([
-            {"name": "Central Business District", "aqi": base, "vulnerability": "High", "risk": "Traffic", "trend": "Rising"},
-            {"name": "Industrial North", "aqi": round(base * 1.3, 2), "vulnerability": "Critical", "risk": "Industrial", "trend": "Stable"},
-            {"name": "Residential South", "aqi": round(base * 0.7, 2), "vulnerability": "Low", "risk": "Dust", "trend": "Falling"},
-            {"name": "Green Belt West", "aqi": round(base * 0.5, 2), "vulnerability": "Minimal", "risk": "None", "trend": "Optimal"},
-        ])
+        return jsonify(
+            [
+                {
+                    "name": "Central Business District",
+                    "aqi": base,
+                    "vulnerability": "High",
+                    "risk": "Traffic",
+                    "trend": "Rising",
+                },
+                {
+                    "name": "Industrial North",
+                    "aqi": round(base * 1.3, 2),
+                    "vulnerability": "Critical",
+                    "risk": "Industrial",
+                    "trend": "Stable",
+                },
+                {
+                    "name": "Residential South",
+                    "aqi": round(base * 0.7, 2),
+                    "vulnerability": "Low",
+                    "risk": "Dust",
+                    "trend": "Falling",
+                },
+                {
+                    "name": "Green Belt West",
+                    "aqi": round(base * 0.5, 2),
+                    "vulnerability": "Minimal",
+                    "risk": "None",
+                    "trend": "Optimal",
+                },
+            ]
+        )
 
     @app.route("/national_metrics")
     def get_national_metrics() -> Response:
         if not state["data"]:
             return jsonify([])
         base = float(state["data"][-1].get("aqi", 0))
-        return jsonify([
-            {"id": "IN-MH", "name": "Maharashtra", "aqi": round(base * 1.1, 2)},
-            {"id": "IN-DL", "name": "Delhi", "aqi": round(base * 1.8, 2)},
-            {"id": "IN-KA", "name": "Karnataka", "aqi": round(base * 0.8, 2)},
-            {"id": "IN-KL", "name": "Kerala", "aqi": round(base * 0.5, 2)},
-        ])
+        return jsonify(
+            [
+                {"id": "IN-MH", "name": "Maharashtra", "aqi": round(base * 1.1, 2)},
+                {"id": "IN-DL", "name": "Delhi", "aqi": round(base * 1.8, 2)},
+                {"id": "IN-KA", "name": "Karnataka", "aqi": round(base * 0.8, 2)},
+                {"id": "IN-KL", "name": "Kerala", "aqi": round(base * 0.5, 2)},
+            ]
+        )
 
     threading.Thread(target=kafka_consumer_worker, daemon=True).start()
     app.run(host=STREAM_HOST, port=STREAM_PORT, debug=False, use_reloader=False)

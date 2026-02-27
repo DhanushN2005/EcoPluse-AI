@@ -31,7 +31,7 @@ API_HOST: str = "0.0.0.0"
 API_PORT: int = 5000
 
 # --- AI Intelligence (OpenAI) ---
-# SECURE: Always use environment variables for keys. 
+# SECURE: Always use environment variables for keys.
 # Do not hardcode secret keys in version control.
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "SECURE_KEY_PLACEHOLDER")
 
@@ -40,7 +40,7 @@ OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "SECURE_KEY_PLACEHOLDER")
 THRESHOLDS: Dict[str, Dict[str, int]] = {
     "AQI": {"warning": 100, "critical": 200, "emergency": 300},
     "PM25": {"warning": 35, "critical": 75, "emergency": 150},
-    "CO2": {"warning": 1000, "critical": 2000, "emergency": 5000}
+    "CO2": {"warning": 1000, "critical": 2000, "emergency": 5000},
 }
 
 # --- Filesystem Path Configuration ---

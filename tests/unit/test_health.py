@@ -1,6 +1,7 @@
 import unittest
 from ecopulse_ai.analytics.health_score import calculate_composite_health
 
+
 class TestHealthScore(unittest.TestCase):
     def test_perfect_scenario(self):
         """Test score with baseline safe values."""
@@ -21,5 +22,6 @@ class TestHealthScore(unittest.TestCase):
         score = calculate_composite_health(100, 800, 45, 50)
         self.assertTrue(70 <= score <= 75)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
