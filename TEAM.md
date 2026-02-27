@@ -1,4 +1,4 @@
-# EcoPluse AI – Team Contributors
+# EcoPluse AI – Team Contributors:
 
 ## Dhanush N – AI & Systems Lead
 GitHub: https://github.com/DhanushN2005
