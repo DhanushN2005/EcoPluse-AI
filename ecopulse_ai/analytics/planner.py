@@ -1,7 +1,6 @@
-import os
 import json
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from openai import OpenAI
 from ecopulse_ai.config import OPENAI_API_KEY
 from ecopulse_ai.analytics.health_score import calculate_composite_health
@@ -12,7 +11,7 @@ logger = logging.getLogger("Analytics-Planner")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 PLANNER_PROMPT = """
-You are the EcoPulse AI Smart City Operations Planner. 
+You are the EcoPulse AI Smart City Operations Planner.
 Your task is to generate a detailed, AI-driven operational plan called "Today's Air Action Plan" based on environmental data.
 
 Data Provided:

@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from fpdf import FPDF
 
 logger = logging.getLogger("Report-Generator")
@@ -61,7 +61,7 @@ def generate_full_report(data: List[Dict[str, Any]], output_path: str) -> str:
     pdf.set_text_color(50, 50, 50)
 
     if data:
-        latest_aqi = data[-1].get("aqi", 0.0)
+        _ = data[-1].get("aqi", 0.0)
         avg_aqi = sum(float(d.get("aqi", 0)) for d in data) / len(data)
         peak_time = datetime.datetime.now().strftime("%H:%M")
 

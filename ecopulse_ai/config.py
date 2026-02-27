@@ -4,7 +4,7 @@ This module handles environment variables, system constants, and directory initi
 """
 
 import os
-from typing import Dict, Any
+from typing import Dict
 from dotenv import load_dotenv
 
 # Load environment variables from .env file if it exists

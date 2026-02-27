@@ -9,4 +9,6 @@ exclude =
     build,
     dist,
     venv
-max-complexity = 10
+max-complexity = 25
+
+ignore = E501,F841

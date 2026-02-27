@@ -1,5 +1,4 @@
 # Anomaly detection logic
-import numpy as np
 
 
 def z_score_anomaly(value, mean, std):

@@ -6,11 +6,10 @@ JSON data to the Apache Kafka broker.
 
 import json
 import logging
-import os
 import random
 import time
 from datetime import datetime
-from typing import Any, Callable, Dict, Generator, Optional
+from typing import Any, Dict, Generator, Optional
 
 from confluent_kafka import Message, Producer
 

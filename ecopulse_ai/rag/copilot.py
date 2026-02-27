@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from openai import OpenAI
 from ecopulse_ai.config import OPENAI_API_KEY
 from .prompts import SYSTEM_PROMPT

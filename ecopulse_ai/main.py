@@ -41,9 +41,7 @@ def main() -> None:
 
     try:
         logger.info("Stage 1: Starting Kafka Sensor Simulator...")
-        p_prod = subprocess.Popen(
-            [sys.executable, "-m", "ecopulse_ai.kafka.producer"], env=env
-        )
+        p_prod = subprocess.Popen([sys.executable, "-m", "ecopulse_ai.kafka.producer"], env=env)
         processes.append(p_prod)
         time.sleep(3)
 
@@ -55,9 +53,7 @@ def main() -> None:
         time.sleep(8)
 
         logger.info("Stage 3: Launching Flask Web Interface...")
-        p_api = subprocess.Popen(
-            [sys.executable, "-m", "ecopulse_ai.api.app"], env=env
-        )
+        p_api = subprocess.Popen([sys.executable, "-m", "ecopulse_ai.api.app"], env=env)
         processes.append(p_api)
 
         logger.info("EcoPulse AI fully operational at http://127.0.0.1:5000")
