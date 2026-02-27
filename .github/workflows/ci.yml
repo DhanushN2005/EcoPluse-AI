@@ -31,4 +31,5 @@ jobs:
         black . --check
     - name: Run unit tests
       run: |
+        export PYTHONPATH=$PYTHONPATH:.
         pytest tests/unit/
